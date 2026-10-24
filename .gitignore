@@ -4,3 +4,5 @@ tests/host_verify/build/
 firmware/build*/
 firmware/sdkconfig
 firmware/sdkconfig.old
+tests/out/
+tests/e2e_output.log

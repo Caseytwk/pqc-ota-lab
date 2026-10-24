@@ -49,10 +49,25 @@ jobs:
       - name: Build lab environment image
         run: docker build -t pqc-ota-lab-env .devcontainer
       - name: Run workshop flow in QEMU
+        shell: bash
         run: |
           cp device/factory.bin device/flash_image.bin
           docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp \
-            -v "$PWD:/lab" -w /lab pqc-ota-lab-env bash tests/e2e_test.sh
+            -v "$PWD:/lab" -w /lab pqc-ota-lab-env bash tests/e2e_test.sh 2>&1 | tee tests/e2e_output.log
+          exit "${PIPESTATUS[0]}"
+      - name: Publish test logs to ci-logs branch
+        if: always()
+        run: |
+          mkdir -p /tmp/ci-logs
+          cp -r tests/out /tmp/ci-logs/ 2>/dev/null || true
+          cp tests/e2e_output.log /tmp/ci-logs/ 2>/dev/null || true
+          cd /tmp/ci-logs
+          git init -q -b ci-logs
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Test logs for run ${{ github.run_id }}"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" ci-logs
 
   publish:
     needs: e2e

@@ -4,7 +4,10 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 chmod +x ./*.sh tools/*.py
-LOG="$(mktemp)"
+OUT="tests/out"
+mkdir -p "$OUT"
+LOG="$OUT/current_boot.log"
+BOOT=0
 SUMMARY=()
 
 die() { echo "FAIL: $1"; echo "----- device log -----"; cat "$LOG"; exit 1; }
@@ -18,11 +21,13 @@ boot_until() {   # boot_until <text to wait for> <timeout seconds>
     sleep 1
     waited=$((waited + 1))
     if ! kill -0 "$pid" 2>/dev/null; then die "device exited before: $1"; fi
-    if [ "$waited" -ge "$2" ]; then kill "$pid" 2>/dev/null || true; wait "$pid" 2>/dev/null || true; die "timed out waiting for: $1"; fi
+    if [ "$waited" -ge "$2" ]; then cp "$LOG" "$OUT/timeout_boot.log"; kill "$pid" 2>/dev/null || true; wait "$pid" 2>/dev/null || true; die "timed out waiting for: $1"; fi
   done
   sleep 1
   kill "$pid" 2>/dev/null || true
   wait "$pid" 2>/dev/null || true
+  BOOT=$((BOOT + 1))
+  cp "$LOG" "$OUT/boot_${BOOT}.log"
 }
 expect() { grep -q -- "$1" "$LOG" || die "missing line: $1"; }
 
