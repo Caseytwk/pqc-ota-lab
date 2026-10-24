@@ -27,6 +27,7 @@
 #include "esp_partition.h"
 #include "esp_system.h"
 #include "esp_timer.h"
+#include "soc/soc.h"
 
 #include "verify.h"
 
@@ -40,6 +41,17 @@
 
 static EventGroupHandle_t s_net_events;
 #define NET_GOT_IP BIT0
+
+static esp_eth_handle_t s_eth;
+static esp_eth_mac_t *s_mac;
+static esp_eth_phy_t *s_phy;
+static esp_eth_netif_glue_handle_t s_glue;
+
+/* OpenCores ethmac registers (QEMU), see esp_eth/src/openeth/openeth.h */
+#define OPENETH_MODER_REG       (DR_REG_EMAC_BASE + 0x00)
+#define OPENETH_INT_SOURCE_REG  (DR_REG_EMAC_BASE + 0x04)
+#define OPENETH_INT_MASK_REG    (DR_REG_EMAC_BASE + 0x08)
+#define OPENETH_MODER_RST       BIT(11)
 
 static trust_anchor_t s_ta;
 static uint8_t s_chunk[CHUNK_SIZE];
@@ -64,17 +76,37 @@ static void network_start(void)
     eth_mac_config_t mac_cfg = ETH_MAC_DEFAULT_CONFIG();
     eth_phy_config_t phy_cfg = ETH_PHY_DEFAULT_CONFIG();
     phy_cfg.autonego_timeout_ms = 100;
-    esp_eth_mac_t *mac = esp_eth_mac_new_openeth(&mac_cfg);
-    esp_eth_phy_t *phy = esp_eth_phy_new_dp83848(&phy_cfg);
+    s_mac = esp_eth_mac_new_openeth(&mac_cfg);
+    s_phy = esp_eth_phy_new_dp83848(&phy_cfg);
 
-    esp_eth_config_t eth_cfg = ETH_DEFAULT_CONFIG(mac, phy);
-    esp_eth_handle_t eth = NULL;
-    ESP_ERROR_CHECK(esp_eth_driver_install(&eth_cfg, &eth));
-    ESP_ERROR_CHECK(esp_netif_attach(netif, esp_eth_new_netif_glue(eth)));
+    esp_eth_config_t eth_cfg = ETH_DEFAULT_CONFIG(s_mac, s_phy);
+    ESP_ERROR_CHECK(esp_eth_driver_install(&eth_cfg, &s_eth));
+    s_glue = esp_eth_new_netif_glue(s_eth);
+    ESP_ERROR_CHECK(esp_netif_attach(netif, s_glue));
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &on_got_ip, NULL));
-    ESP_ERROR_CHECK(esp_eth_start(eth));
+    ESP_ERROR_CHECK(esp_eth_start(s_eth));
 
     xEventGroupWaitBits(s_net_events, NET_GOT_IP, pdFALSE, pdTRUE, portMAX_DELAY);
+}
+
+/*
+ * A CPU software reset does not reset the Ethernet MAC or the interrupt matrix.
+ * Without this, the new firmware takes a stale MAC interrupt during early
+ * startup and crashes. Tear the driver down (which unroutes its interrupt),
+ * then return the OpenCores MAC registers to their power-on state.
+ */
+static void network_shutdown(void)
+{
+    esp_eth_stop(s_eth);
+    esp_eth_del_netif_glue(s_glue);
+    if (esp_eth_driver_uninstall(s_eth) == ESP_OK) {
+        s_phy->del(s_phy);
+        s_mac->del(s_mac);
+    }
+    REG_WRITE(OPENETH_INT_MASK_REG, 0);
+    REG_WRITE(OPENETH_INT_SOURCE_REG, 0xFFFFFFFF);
+    REG_SET_BIT(OPENETH_MODER_REG, OPENETH_MODER_RST);
+    REG_CLR_BIT(OPENETH_MODER_REG, OPENETH_MODER_RST);
 }
 
 /* ---------- HTTP helpers ---------- */
@@ -249,7 +281,8 @@ static poll_result_t poll_once(const esp_app_desc_t *running)
     ESP_ERROR_CHECK(esp_ota_set_boot_partition(slot));
     printf("[OTA ] Activating %s, rebooting\n", slot->label);
     fflush(stdout);
-    vTaskDelay(pdMS_TO_TICKS(500));
+    vTaskDelay(pdMS_TO_TICKS(200));
+    network_shutdown();
     esp_restart();
     return POLL_DONE;
 }
