@@ -1,0 +1,6 @@
+device/flash_image.bin
+server.log
+tests/host_verify/build/
+firmware/build*/
+firmware/sdkconfig
+firmware/sdkconfig.old

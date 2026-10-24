@@ -1,0 +1,23 @@
+{
+  "name": "PQC OTA Lab",
+  "build": { "dockerfile": "Dockerfile" },
+  "remoteUser": "lab",
+  "hostRequirements": { "cpus": 2 },
+  "postCreateCommand": "chmod +x *.sh tools/*.py tests/*.sh firmware/build.sh fallback/*.sh && ln -sfn ${containerWorkspaceFolder} ~/lab && { [ ! -f device/factory.bin ] || cp -n device/factory.bin device/flash_image.bin; }",
+  "portsAttributes": {
+    "8070": { "label": "Firmware update server", "onAutoForward": "silent" }
+  },
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.sendKeybindingsToShell": true,
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "workbench.startupEditor": "none",
+        "git.autofetch": false
+      }
+    },
+    "codespaces": {
+      "openFiles": ["README.md"]
+    }
+  }
+}

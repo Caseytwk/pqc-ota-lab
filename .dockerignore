@@ -1,0 +1,6 @@
+.git
+firmware/build*
+tests/host_verify/build
+keys/*.pem
+keys/.provisioned
+ota/firmware.*
