@@ -1,0 +1,26 @@
+Starting ESP32 emulator. Stop it with Ctrl+A then X.
+Adding SPI flash device
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x12 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0030,len:4668
+ho 0 tail 12 room 4
+load:0x40078000,len:14284
+load:0x40080400,len:3120
+entry 0x4008059c
+
+[BOOT] Firmware v1.0.0 running from ota_0
+[KEY ] Trust anchor: ML-DSA-44
+E (1892) esp_eth: esp_eth_ioctl(533): add mac address to filter not supported
+E (1892) esp_eth.netif.netif_glue: eth_set_mac_filter(56): failed to add mac filter
+E (1892) esp_netif_lwip: Failed to add multicast filter for IPv6
+[OTA ] Checking http://10.0.2.2:8070 for updates
+[OTA ] Found firmware v2.0.0, downloading
+[OTA ] Image 506 KB written to ota_1
+[SIG ] ML-DSA-44 signature 2420 bytes
+[SIG ] Verify: FAIL
+[OTA ] Update rejected, ota_1 erased, staying on v1.0.0
+qemu-system-xtensa: terminating on signal 15 from pid 1 (bash)

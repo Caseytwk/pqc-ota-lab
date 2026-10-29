@@ -1,0 +1,17 @@
+Starting ESP32 emulator. Stop it with Ctrl+A then X.
+Adding SPI flash device
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x12 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0030,len:4668
+ho 0 tail 12 room 4
+load:0x40078000,len:14284
+load:0x40080400,len:3120
+entry 0x4008059c
+
+[BOOT] Firmware v1.0.0 running from ota_0
+[KEY ] No trust anchor provisioned, OTA disabled
+qemu-system-xtensa: terminating on signal 15 from pid 1 (bash)

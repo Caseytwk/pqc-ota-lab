@@ -1,0 +1,28 @@
+Device reset to factory firmware v1.0.0
+No trust anchor provisioned
+== Smoke test (prerequisites page)
+PASS: factory device boots without a trust anchor
+== Lab Part 1: ECDSA P-256
+Provisioned ECDSA-P256 trust anchor (64 bytes) into device key partition
+Verified OK
+Device reset to factory firmware v1.0.0
+Trust anchor kept: ECDSA-P256
+PASS: ECDSA-P256 signed update installed
+Device reset to factory firmware v1.0.0
+Trust anchor kept: ECDSA-P256
+PASS: ECDSA-P256 tampered update rejected
+== Lab Part 2: ML-DSA-44
+Device reset to factory firmware v1.0.0
+Trust anchor kept: ECDSA-P256
+Provisioned ML-DSA-44 trust anchor (1312 bytes) into device key partition
+Signature Verified Successfully
+Device reset to factory firmware v1.0.0
+Trust anchor kept: ML-DSA-44
+PASS: ML-DSA-44 signed update installed
+Device reset to factory firmware v1.0.0
+Trust anchor kept: ML-DSA-44
+PASS: ML-DSA-44 tampered update rejected
+
+== All lab steps passed
+ECDSA-P256: ECDSA-P256 signature 71 bytes | PASS in 284 ms
+ML-DSA-44: ML-DSA-44 signature 2420 bytes | PASS in 66 ms
