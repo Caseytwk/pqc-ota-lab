@@ -1,0 +1,12 @@
+
+[1m  YOUR ANSWER SHEET[0m
+  Metric                             [1mECDSA P-256   ML-DSA-44     [0m
+  ---------------------------------------------------------------
+  Public key (DER bytes)             [30;43m 91          [0m [30;43m 1,334       [0m 
+  Signature (bytes)                  [30;43m 71          [0m [30;43m 2,420       [0m 
+  Device verify time (ms, emulated)  [30;43m 357         [0m [30;43m 82          [0m 
+  Valid update installed (Y/N)       [30;43m Y           [0m [30;43m Y           [0m 
+  Tampered update rejected (Y/N)     [30;43m Y           [0m [30;43m Y           [0m 
+
+  [1;32mAll values found. Copy them onto your answer sheet.[0m
+
