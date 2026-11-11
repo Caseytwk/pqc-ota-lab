@@ -6,3 +6,4 @@ firmware/sdkconfig
 firmware/sdkconfig.old
 tests/out/
 tests/e2e_output.log
+device/device.log

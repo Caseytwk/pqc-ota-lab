@@ -30,6 +30,7 @@ boot_until() {   # boot_until <text to wait for> <timeout seconds>
   cp "$LOG" "$OUT/boot_${BOOT}.log"
 }
 expect() { grep -q -- "$1" "$LOG" || die "missing line: $1"; }
+plain() { sed 's/\x1b\[[0-9;]*m//g' "$LOG"; }
 
 flip_byte() {
 python3 - <<'PY'
@@ -42,7 +43,7 @@ PY
 cleanup() { pkill -f "http.server 8070" 2>/dev/null || true; pkill -f qemu-system-xtensa 2>/dev/null || true; }
 trap cleanup EXIT
 
-rm -f keys/*.pem keys/.provisioned ota/firmware.bin ota/firmware.sig
+rm -f keys/*.pem keys/.provisioned ota/firmware.bin ota/firmware.sig device/device.log
 ./reset_device.sh
 
 echo "== Smoke test (prerequisites page)"
@@ -62,7 +63,8 @@ run_scheme() {   # run_scheme <label>, keys already provisioned, ota/firmware.* 
   expect "Verify: PASS"
   expect "Firmware v2.0.0 running from ota_1"
   ok "$label signed update installed"
-  SUMMARY+=("$label: $(grep 'signature .* bytes' "$LOG" | head -n 1 | sed 's/.*\] //') | $(grep 'Verify: PASS' "$LOG" | sed 's/.*Verify: //')")
+  grep -q $'\x1b\[1;30;43m\[SIG \] Verify: PASS' "$LOG" || die "verify line is not highlighted"
+  SUMMARY+=("$label: $(plain | grep 'signature .* bytes' | head -n 1 | sed 's/.*\] //; s/ *<--.*//') | $(plain | grep 'Verify: PASS' | sed 's/.*Verify: //; s/ *<--.*//')")
 
   flip_byte
   ./reset_device.sh
@@ -91,8 +93,16 @@ openssl pkeyutl -sign -rawin -inkey keys/mldsa_priv.pem -in ota/firmware.bin -ou
 openssl pkeyutl -verify -rawin -pubin -inkey keys/mldsa_pub.pem -in ota/firmware.bin -sigfile ota/firmware.sig
 run_scheme "ML-DSA-44"
 
+echo "== Answer sheet (./results.sh)"
+./results.sh | tee "$OUT/results.txt"
+RES="$(sed 's/\x1b\[[0-9;]*m//g' "$OUT/results.txt")"
+if grep -q "not yet" <<< "$RES"; then echo "FAIL: results.sh has missing values"; exit 1; fi
+for v in "1,334" "2,420" " 91 "; do grep -q -- "$v" <<< "$RES" || { echo "FAIL: results.sh missing $v"; exit 1; }; done
+[ "$(grep -c ' Y .* Y ' <<< "$RES")" -eq 2 ] || { echo "FAIL: results.sh install or tamper results wrong"; exit 1; }
+ok "results.sh fills the answer sheet"
+
 echo
 echo "== All lab steps passed"
 printf '%s\n' "${SUMMARY[@]}"
-rm -f keys/*.pem keys/.provisioned ota/firmware.bin ota/firmware.sig server.log
+rm -f keys/*.pem keys/.provisioned ota/firmware.bin ota/firmware.sig server.log device/device.log
 cp device/factory.bin device/flash_image.bin

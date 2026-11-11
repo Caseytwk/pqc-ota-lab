@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Boot the emulated ESP32. Stop it with Ctrl+A then X.
+# Device output is also saved to device/device.log for ./results.sh
 set -euo pipefail
 cd "$(dirname "$0")"
 if pgrep -f qemu-system-xtensa > /dev/null; then
@@ -14,4 +15,5 @@ exec qemu-system-xtensa -nographic -M esp32 -m 4M \
   -global driver=nvram.esp32.efuse,property=drive,value=efuse \
   -global driver=timer.esp32.timg,property=wdt_disable,value=true \
   -nic user,model=open_eth \
-  -serial mon:stdio
+  -chardev stdio,id=con,mux=on,logfile=device/device.log,logappend=on \
+  -serial chardev:con -mon chardev=con

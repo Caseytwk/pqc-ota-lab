@@ -39,6 +39,13 @@
 #define KEYS_SUBTYPE      ((esp_partition_subtype_t)0x40)
 #define APP_DESC_OFFSET   (sizeof(esp_image_header_t) + sizeof(esp_image_segment_header_t))
 
+/* Terminal colours so attendees can spot the values for their answer sheet. */
+#define HL_ANSWER   "\033[1;30;43m"   /* black on yellow */
+#define HL_ALERT    "\033[1;97;41m"   /* white on red */
+#define HL_GOOD     "\033[1;32m"      /* bold green */
+#define HL_OFF      "\033[0m"
+#define ANSWER_TAG  "  <-- answer sheet"
+
 static EventGroupHandle_t s_net_events;
 #define NET_GOT_IP BIT0
 
@@ -179,7 +186,7 @@ typedef enum {
 static void reject(const esp_partition_t *slot, const char *running_ver)
 {
     esp_partition_erase_range(slot, 0, slot->size);
-    printf("[OTA ] Update rejected, %s erased, staying on v%s\n", slot->label, running_ver);
+    printf(HL_ALERT "[OTA ] Update rejected, %s erased, staying on v%s" HL_OFF ANSWER_TAG "\n", slot->label, running_ver);
 }
 
 static poll_result_t poll_once(const esp_app_desc_t *running)
@@ -249,7 +256,7 @@ static poll_result_t poll_once(const esp_app_desc_t *running)
         reject(slot, running->version);
         return POLL_DONE;
     }
-    printf("[SIG ] %s signature %d bytes\n", ta_name(s_ta.type), sig_len);
+    printf(HL_ANSWER "[SIG ] %s signature %d bytes" HL_OFF ANSWER_TAG "\n", ta_name(s_ta.type), sig_len);
 
     /* Verify over the image exactly as written to flash. */
     const void *image = NULL;
@@ -267,11 +274,11 @@ static poll_result_t poll_once(const esp_app_desc_t *running)
 
     if (rc != 0) {
         esp_ota_abort(ota);
-        printf("[SIG ] Verify: FAIL\n");
+        printf(HL_ALERT "[SIG ] Verify: FAIL" HL_OFF "\n");
         reject(slot, running->version);
         return POLL_DONE;
     }
-    printf("[SIG ] Verify: PASS in %" PRId64 " ms\n", elapsed_ms);
+    printf(HL_ANSWER "[SIG ] Verify: PASS in %" PRId64 " ms" HL_OFF ANSWER_TAG "\n", elapsed_ms);
 
     if (esp_ota_end(ota) != ESP_OK) {
         printf("[OTA ] Signature valid but image format invalid\n");
@@ -335,7 +342,7 @@ void app_main(void)
     const esp_app_desc_t *running = esp_app_get_description();
     const esp_partition_t *part = esp_ota_get_running_partition();
 
-    printf("\n[BOOT] Firmware v%s running from %s\n", running->version, part->label);
+    printf("\n" HL_GOOD "[BOOT] Firmware v%s running from %s" HL_OFF "\n", running->version, part->label);
 
     if (!load_trust_anchor()) {
         printf("[KEY ] No trust anchor provisioned, OTA disabled\n");
